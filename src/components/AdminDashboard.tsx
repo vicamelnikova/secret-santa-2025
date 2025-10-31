@@ -12,15 +12,43 @@ export default function AdminDashboard() {
   const [error, setError] = useState('');
   const [showRaffleModal, setShowRaffleModal] = useState(false);
   const [confetti, setConfetti] = useState(false);
+  const [email, setEmail] = useState('');
 
-  const handleLogin = (e: React.FormEvent) => {
+  useEffect(() => {
+  supabase.auth.getSession().then(({ data }) => {
+    if (data.session) setAuthenticated(true);
+  });
+
+  const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+    setAuthenticated(!!session);
+  });
+
+  return () => listener.subscription.unsubscribe();
+}, []);
+
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === ADMIN_PASSWORD) {
+    setError('');
+    setLoading(true);
+
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+
+      const user = data?.user;
+      if (!user) throw new Error('No user returned');
+
       setAuthenticated(true);
-      setError('');
-      fetchParticipants();
-    } else {
-      setError('Incorrect password');
+      await fetchParticipants();
+    } catch (err: any) {
+      setError(err.message || 'Failed to log in');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -149,16 +177,20 @@ export default function AdminDashboard() {
 
           <form onSubmit={handleLogin}>
             <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg mb-4"
+              placeholder="Admin email"
+            />
+            <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent mb-4"
-              placeholder="Enter admin password"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg mb-4"
+              placeholder="Admin password"
             />
-            <button
-              type="submit"
-              className="w-full bg-red-600 text-white py-3 rounded-lg hover:bg-red-700 transition-colors font-semibold"
-            >
+            <button type="submit" className="w-full bg-red-600 text-white py-3 rounded-lg">
               Unlock Dashboard
             </button>
           </form>
