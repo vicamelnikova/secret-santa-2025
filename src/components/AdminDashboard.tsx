@@ -2,8 +2,6 @@ import { useState, useEffect } from 'react';
 import { Users, RefreshCw, Download, Shuffle, Lock, LogOut, Sparkles } from 'lucide-react';
 import { supabase, Participant } from '../lib/supabase';
 
-const ADMIN_PASSWORD = 'Ho-ho-ho2025';
-
 export default function AdminDashboard() {
   const [authenticated, setAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
